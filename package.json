@@ -1,0 +1,14 @@
+{
+  "name": "resume-analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start:client": "cd client && npm install && npm run dev",
+    "start:server": "cd server && npm install && node index.js",
+    "start:ai": "cd ai && python -m venv venv && venv\\Scripts\\activate && pip install -r requirements.txt && python app.py",
+    "dev": "concurrently \"npm: start:ai\" \"npm: start:server\" \"npm: start:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}
