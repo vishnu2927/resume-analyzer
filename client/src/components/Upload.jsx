@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 
 function UploadIcon() {
   return (
@@ -21,6 +21,7 @@ export default function Upload({
   error
 }) {
   const [dragActive, setDragActive] = useState(false)
+  const inputRef = useRef(null)
 
   const canAnalyze = useMemo(() => Boolean(file && !loading), [file, loading])
 
@@ -29,7 +30,11 @@ export default function Upload({
     if (selectedFile.type !== 'application/pdf') {
       return
     }
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      return
+    }
     setFile(selectedFile)
+    setDragActive(false)
   }
 
   const onDrop = (event) => {
@@ -38,8 +43,17 @@ export default function Upload({
     validateAndSet(event.dataTransfer.files?.[0])
   }
 
+  const openPicker = () => inputRef.current?.click()
+
+  const loadingBadge = loading ? (
+    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-100">
+      <span className="spinner-ring inline-block h-3.5 w-3.5" />
+      {uploadProgress}%
+    </span>
+  ) : null
+
   return (
-    <div className="glass-card overflow-hidden rounded-[2rem] border border-white/10 p-6 shadow-2xl shadow-emerald-950/15 sm:p-8">
+    <div className="glass-card card-hover overflow-hidden rounded-[2rem] border border-white/10 p-6 shadow-2xl shadow-emerald-950/15 sm:p-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.22em] text-emerald-300/90">Resume upload</p>
@@ -58,7 +72,7 @@ export default function Upload({
         onDragLeave={() => setDragActive(false)}
         onDrop={onDrop}
         className={`relative rounded-[1.75rem] border-2 border-dashed p-6 transition-all duration-300 sm:p-8 ${
-          dragActive ? 'border-emerald-400 bg-emerald-400/10' : 'border-white/15 bg-white/[0.03]'
+          dragActive ? 'border-emerald-300 bg-emerald-400/12 shadow-[0_0_0_1px_rgba(16,185,129,0.2),0_0_50px_rgba(16,185,129,0.18)]' : 'border-white/15 bg-white/[0.03]'
         }`}
       >
         <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.10),transparent_35%)]" />
@@ -96,9 +110,10 @@ export default function Upload({
         </div>
 
         <div className="relative mt-6 grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
-          <label className="group flex cursor-pointer flex-col gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/50 p-4 transition hover:border-emerald-400/40 hover:bg-slate-950/70">
+          <div className="group flex flex-col gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/50 p-4 transition hover:border-emerald-400/40 hover:bg-slate-950/70">
             <span className="text-sm font-medium text-slate-200">Choose resume PDF</span>
             <input
+              ref={inputRef}
               type="file"
               accept="application/pdf"
               onChange={(event) => validateAndSet(event.target.files?.[0])}
@@ -107,26 +122,43 @@ export default function Upload({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-slate-300">{file ? file.name : 'No file selected yet'}</p>
-                <p className="mt-1 text-xs text-slate-500">Supported format: PDF only</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {file ? `${Math.max(1, Math.round(file.size / 1024))} KB selected` : 'Supported format: PDF only'}
+                </p>
               </div>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-                {file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : 'Browse'}
+                {file ? 'Ready' : 'Browse'}
               </span>
             </div>
-          </label>
+            <button
+              type="button"
+              onClick={openPicker}
+              className="self-start rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Pick PDF
+            </button>
+          </div>
 
           <div className="flex flex-col gap-3">
             <button
               type="button"
               disabled={!canAnalyze}
               onClick={onAnalyze}
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:from-emerald-300 hover:to-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 hover:from-emerald-300 hover:to-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Analyzing Resume...' : 'Analyze Resume'}
             </button>
-            <p className="text-center text-xs text-slate-400">
-              {loading ? 'Parsing, scoring, and generating insights...' : 'Start the analysis when your resume is ready.'}
-            </p>
+            <div className="flex items-center justify-center gap-2 text-center text-xs text-slate-400">
+              {loading ? (
+                <>
+                  <span className="spinner-ring inline-block h-3.5 w-3.5" />
+                  <span>Parsing, scoring, and generating insights...</span>
+                </>
+              ) : (
+                <span>Start the analysis when your resume is ready.</span>
+              )}
+            </div>
+            <div className="flex justify-center">{loadingBadge}</div>
           </div>
         </div>
 
@@ -137,14 +169,14 @@ export default function Upload({
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-white/10">
             <div
-              className="progress-bar h-full rounded-full"
+              className={`progress-bar h-full rounded-full ${loading ? 'animate-pulse' : ''}`}
               style={{ width: `${loading || uploadProgress > 0 ? uploadProgress : 0}%` }}
             />
           </div>
         </div>
 
         {error && (
-          <div className="relative mt-5 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          <div className="relative mt-5 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100 shadow-inner shadow-red-950/20">
             {error}
           </div>
         )}

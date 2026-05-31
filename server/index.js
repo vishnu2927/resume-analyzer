@@ -20,7 +20,11 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const AI_URL = process.env.AI_URL || 'http://localhost:8000'
+const AI_URL = process.env.AI_URL || 'http://127.0.0.1:8000'
+
+app.get('/health', (_, res) => {
+  res.json({ ok: true })
+})
 
 app.post('/api/analyze', upload.single('file'), async (req, res) => {
   console.log('[Server] /api/analyze called')
@@ -76,5 +80,5 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
   }
 })
 
-const PORT = process.env.SERVER_PORT || 5000
+const PORT = process.env.PORT || process.env.SERVER_PORT || 5000
 app.listen(PORT, ()=> console.log(`Server running on port ${PORT}`))

@@ -18,6 +18,12 @@ Tech Stack
 - Backend: Node.js + Express
 - AI service: Python Flask (pdfplumber) + Groq API
 
+Environment Variables
+- `GROQ_API_KEY`: Groq API key used by the Flask AI service
+- `VITE_API_BASE_URL`: Base URL for the deployed backend. Use `http://localhost:5000` locally, and your Railway URL in production
+- `AI_URL`: Internal AI service URL used by the Node server. Defaults to `http://127.0.0.1:8000`
+- `PORT`: Railway assigns this automatically to the Node server
+
 Screenshots
 - Add screenshots here (client/src/assets/screenshots)
 
@@ -50,6 +56,27 @@ venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
+
+Deployment
+
+1. Vercel frontend
+
+- Connect the repository to Vercel.
+- Vercel uses the root [vercel.json](vercel.json) to build `client` and serve the static app.
+- Set `VITE_API_BASE_URL` in Vercel to your Railway backend URL, for example `https://your-backend.up.railway.app`.
+
+2. Railway backend
+
+- Connect the same repository to Railway.
+- Railway uses the root [railway.json](railway.json) to install the Node and Python dependencies and start both backend processes.
+- Add `GROQ_API_KEY` in Railway variables.
+- `AI_URL` can stay unset because the Node server talks to the Flask service running locally inside the same Railway container.
+
+3. Local development
+
+- Copy [.env.example](.env.example) to `.env`.
+- Set `GROQ_API_KEY` and, if needed, `VITE_API_BASE_URL`.
+- The Vite dev server proxies `/api` to the Node server on port 5000.
 
 Notes
 - Ask for Groq API key when ready to integrate.

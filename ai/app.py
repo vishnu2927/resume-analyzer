@@ -28,6 +28,7 @@ def default_result(summary_text=""):
         "keywords_found": [],
         "keywords_missing": [],
         "experience_years": 0,
+        "experience_label": "",
         "job_titles_suggested": [],
         "summary": summary_text
     }
@@ -55,6 +56,7 @@ def normalize_result(result, raw_content=""):
         output["keywords_missing"] = output.get("keywords_missing") if isinstance(output.get("keywords_missing"), list) else []
         output["job_titles_suggested"] = output.get("job_titles_suggested") if isinstance(output.get("job_titles_suggested"), list) else []
         output["experience_years"] = int(output.get("experience_years", 0) or 0)
+        output["experience_label"] = str(output.get("experience_label", "") or "")
 
         improvements = output.get("improvements")
         if isinstance(improvements, list):
@@ -123,6 +125,7 @@ def analyze():
             "keywords_found": ["React", "Node.js", "Python", "MongoDB"],
             "keywords_missing": ["Docker", "AWS", "CI/CD"],
             "experience_years": 1,
+            "experience_label": "6 months",
             "job_titles_suggested": ["Software Engineer", "Full Stack Developer", "AI Engineer"],
             "summary": "Strong candidate with AI/ML focus..."
         },

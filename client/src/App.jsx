@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import Upload from './components/Upload'
 import Results from './components/Results'
@@ -24,6 +24,35 @@ const heroMetrics = [
   { label: 'Role match signal', value: '100%' }
 ]
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || ''
+
+function FooterGitHubIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8">
+      <path d="M9 19c-4.5 1.5-4.5-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 18 4.77 5.07 5.07 0 0 0 17.91 1S16.73.65 14 2.48a13.38 13.38 0 0 0-7 0C4.27.65 3.09 1 3.09 1A5.07 5.07 0 0 0 3 4.77a5.44 5.44 0 0 0-1.5 3.75c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 7 18.13V22" />
+    </svg>
+  )
+}
+
+function FooterLinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8">
+      <path d="M16 8a6 6 0 0 1 6 6v6h-4v-6a2 2 0 0 0-4 0v6h-4V8h4v2a4 4 0 0 1 2-2Z" />
+      <rect x="2" y="8" width="4" height="12" rx="1" />
+      <circle cx="4" cy="4" r="2" />
+    </svg>
+  )
+}
+
+function FooterMailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  )
+}
+
 export default function App() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [jobRole, setJobRole] = useState('')
@@ -31,6 +60,8 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
+  const resultsRef = useRef(null)
+  const fakeProgressTimerRef = useRef(null)
 
   const hasResult = Boolean(result)
 
@@ -39,16 +70,53 @@ export default function App() {
     return 'Turn a PDF resume into a polished, recruiter-friendly analysis.'
   }, [hasResult])
 
+  useEffect(() => {
+    if (hasResult && resultsRef.current) {
+      window.requestAnimationFrame(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  }, [hasResult])
+
+  useEffect(() => {
+    if (!loading) {
+      if (fakeProgressTimerRef.current) {
+        window.clearInterval(fakeProgressTimerRef.current)
+        fakeProgressTimerRef.current = null
+      }
+      return undefined
+    }
+
+    setUploadProgress(12)
+    fakeProgressTimerRef.current = window.setInterval(() => {
+      setUploadProgress((current) => {
+        if (current >= 94) {
+          window.clearInterval(fakeProgressTimerRef.current)
+          fakeProgressTimerRef.current = null
+          return current
+        }
+        return current + (current < 35 ? 8 : current < 70 ? 4 : 2)
+      })
+    }, 280)
+
+    return () => {
+      if (fakeProgressTimerRef.current) {
+        window.clearInterval(fakeProgressTimerRef.current)
+        fakeProgressTimerRef.current = null
+      }
+    }
+  }, [loading])
+
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      setError('Upload a PDF resume before analyzing.')
+      setError('Please upload a PDF resume before analyzing.')
       return
     }
 
     setLoading(true)
     setError('')
     setResult(null)
-    setUploadProgress(0)
+    setUploadProgress(8)
 
     try {
       const form = new FormData()
@@ -57,7 +125,7 @@ export default function App() {
         form.append('job_role', jobRole.trim())
       }
 
-      const response = await axios.post('/api/analyze', form, {
+      const response = await axios.post(`${apiBaseUrl}/api/analyze`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 180000,
         onUploadProgress: (event) => {
@@ -72,10 +140,13 @@ export default function App() {
       setResult(response.data)
     } catch (err) {
       const detail = err?.response?.data?.details
+      const upstream = err?.response?.data?.upstream
       const message = err?.response?.data?.error || err.message || 'Upload failed'
-      setError(detail ? `${message}: ${typeof detail === 'string' ? detail : JSON.stringify(detail)}` : message)
+      const extra = detail ? ` ${typeof detail === 'string' ? detail : JSON.stringify(detail)}` : ''
+      setError(`${upstream ? `[${upstream}] ` : ''}${message}.${extra}`)
     } finally {
       setLoading(false)
+      window.setTimeout(() => setUploadProgress((current) => (current >= 100 ? 0 : current)), 800)
     }
   }
 
@@ -87,9 +158,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-slate-950 text-white">
+    <div className="min-h-screen overflow-hidden bg-slate-950 text-white page-enter">
       <div className="hero-orb hero-orb-left" />
       <div className="hero-orb hero-orb-right" />
+      <div className="pointer-events-none fixed inset-0 opacity-[0.12] bg-[linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:52px_52px]" />
       <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
         <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 px-6 py-10 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl sm:px-8 lg:px-12 lg:py-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_42%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_38%),linear-gradient(135deg,rgba(8,15,32,0.94),rgba(3,7,18,0.98))]" />
@@ -181,7 +253,7 @@ export default function App() {
         </section>
 
         {hasResult && (
-          <section className="animate-fade-up">
+          <section ref={resultsRef} className="animate-fade-up scroll-mt-8">
             <Results
               data={result}
               jobRole={jobRole}
@@ -189,6 +261,74 @@ export default function App() {
             />
           </section>
         )}
+
+        <footer className="mt-2 overflow-hidden rounded-[1.75rem] border border-white/10 border-t-emerald-400/30 bg-slate-950/95 px-6 py-8 shadow-2xl shadow-emerald-950/10 backdrop-blur-xl sm:px-8">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">About</p>
+              <h3 className="mt-3 text-lg font-semibold text-white">Vishnu Yadav</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-300">B.Tech CSE (AI &amp; ML) — RKGIT, AKTU</p>
+              <p className="mt-3 text-sm leading-6 text-slate-300">Full Stack Developer &amp; AI Enthusiast</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">Ghaziabad, Uttar Pradesh, India</p>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">Connect</p>
+              <div className="mt-4 space-y-3 text-sm">
+                <a
+                  href="https://github.com/vishnu2927"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 text-slate-300 transition duration-200 hover:-translate-y-0.5 hover:text-emerald-300"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-emerald-300">
+                    <FooterGitHubIcon />
+                  </span>
+                  <span>GitHub</span>
+                </a>
+                <a
+                  href="https://linkedin.com/in/vishnu-yadav-4476352ab"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 text-slate-300 transition duration-200 hover:-translate-y-0.5 hover:text-emerald-300"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-emerald-300">
+                    <FooterLinkedInIcon />
+                  </span>
+                  <span>LinkedIn</span>
+                </a>
+                <a
+                  href="mailto:vishnu29sep@gmail.com"
+                  className="flex items-center gap-3 text-slate-300 transition duration-200 hover:-translate-y-0.5 hover:text-emerald-300"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-emerald-300">
+                    <FooterMailIcon />
+                  </span>
+                  <span>Email</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">Project</p>
+              <h3 className="mt-3 text-lg font-semibold text-white">About This Project</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-300">Smart Resume Analyzer — AI powered ATS analysis tool</p>
+              <p className="mt-3 text-sm leading-6 text-slate-400">Built with React • Node.js • Python • Groq AI</p>
+              <a
+                href="https://github.com/vishnu2927/resume-analyzer"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:-translate-y-0.5 hover:border-emerald-300/40 hover:bg-emerald-400/15 hover:text-emerald-100"
+              >
+                View Source Code
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-white/10 pt-5 text-center text-sm text-slate-400">
+            © 2025 Vishnu Yadav • Built with ❤️ for job seekers
+          </div>
+        </footer>
       </main>
     </div>
   )
