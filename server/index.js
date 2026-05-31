@@ -30,10 +30,16 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
   }
 
   console.log('[Server] Received file:', { originalname: req.file.originalname, path: req.file.path, size: req.file.size })
+  if (req.body && req.body.job_role) {
+    console.log('[Server] Job role received:', req.body.job_role)
+  }
 
   try {
     const form = new FormData()
     form.append('file', fs.createReadStream(req.file.path), req.file.originalname)
+    if (req.body && req.body.job_role) {
+      form.append('job_role', req.body.job_role)
+    }
 
     const headers = form.getHeaders()
     console.log('[Server] Forwarding file to AI service at', `${AI_URL}/analyze`)
@@ -62,7 +68,11 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
 
     // choose appropriate status code
     const status = err.response && err.response.status ? err.response.status : 500
-    return res.status(status).json({ error: 'Failed to analyze file', details: aiErr || err.message })
+    return res.status(status).json({
+      error: aiErr?.error || 'Failed to analyze file',
+      details: aiErr?.details || aiErr || err.message,
+      upstream: aiErr ? 'ai-service' : 'server'
+    })
   }
 })
 
