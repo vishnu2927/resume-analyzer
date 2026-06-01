@@ -138,12 +138,8 @@ export default function App() {
 
       setUploadProgress(100)
       setResult(response.data)
-    } catch (err) {
-      const detail = err?.response?.data?.details
-      const upstream = err?.response?.data?.upstream
-      const message = err?.response?.data?.error || err.message || 'Upload failed'
-      const extra = detail ? ` ${typeof detail === 'string' ? detail : JSON.stringify(detail)}` : ''
-      setError(`${upstream ? `[${upstream}] ` : ''}${message}.${extra}`)
+    } catch (error) {
+      setError(error?.message || error?.error || 'Failed to analyze resume. Please try again.')
     } finally {
       setLoading(false)
       window.setTimeout(() => setUploadProgress((current) => (current >= 100 ? 0 : current)), 800)
