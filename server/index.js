@@ -20,7 +20,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const AI_URL = process.env.AI_URL || 'http://127.0.0.1:8000'
+const AI_URL = process.env.AI_URL || "https://resume-analyzer-ai-3n0n.onrender.com";
 
 app.get('/health', (_, res) => {
   res.json({ ok: true })
