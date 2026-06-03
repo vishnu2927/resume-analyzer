@@ -24,7 +24,7 @@ const heroMetrics = [
   { label: 'Role match signal', value: '100%' }
 ]
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || ''
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || ''
 
 function FooterGitHubIcon() {
   return (
@@ -125,7 +125,7 @@ export default function App() {
         form.append('job_role', jobRole.trim())
       }
 
-      const response = await axios.post(`${apiBaseUrl}/api/analyze`, form, {
+      const response = await axios.post(`${API_BASE}/api/analyze`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 180000,
         onUploadProgress: (event) => {
