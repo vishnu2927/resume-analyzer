@@ -24,7 +24,10 @@ const heroMetrics = [
   { label: 'Role match signal', value: '100%' }
 ]
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || 'https://resume-analyzer-server-k5vw.onrender.com'
+const API_BASE = (import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || 'https://resume-analyzer-server-k5vw.onrender.com')
+  .replace(/^VITE_API_BASE_URL=/, '')
+
+console.log('API_BASE:', API_BASE)
 
 function FooterGitHubIcon() {
   return (
