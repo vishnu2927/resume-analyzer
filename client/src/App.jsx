@@ -24,7 +24,7 @@ const heroMetrics = [
   { label: 'Role match signal', value: '100%' }
 ]
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || ''
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') || 'https://resume-analyzer-server-k5vw.onrender.com'
 
 function FooterGitHubIcon() {
   return (
@@ -125,8 +125,7 @@ export default function App() {
         form.append('job_role', jobRole.trim())
       }
 
-      const response = await axios.post(`https://resume-analyzer-server-k5vw.onrender.com/api/analyze`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.post(`${API_BASE}/api/analyze`, form, {
         timeout: 180000,
         onUploadProgress: (event) => {
           if (event.total) {
