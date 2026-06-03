@@ -16,7 +16,7 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     
-    const pdfParse = require('pdf-parse');
+   const pdfParse = require('pdf-parse').default || require('pdf-parse');
     const data = await pdfParse(req.file.buffer);
     const text = data.text;
     const jobRole = req.body.job_role || '';
