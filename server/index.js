@@ -3,7 +3,16 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const Groq = require('groq-sdk');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
+
+const pdfParse = async (buffer) => {
+  const parser = new PDFParse({ data: buffer });
+  try {
+    return await parser.getText();
+  } finally {
+    await parser.destroy();
+  }
+};
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -68,6 +77,7 @@ app.post('/api/analyze', (req, res, next) => {
     }
 
     console.log('[ANALYZE] Starting PDF parsing');
+    console.log(typeof pdfParse);
     console.log('[ANALYZE] Buffer length:', req.file.buffer ? req.file.buffer.length : 0);
     const data = await pdfParse(req.file.buffer);
     console.log('[ANALYZE] PDF parsing complete');
